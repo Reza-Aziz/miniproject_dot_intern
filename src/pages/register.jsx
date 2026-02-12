@@ -1,7 +1,17 @@
 import React from 'react'
 import { useState } from 'react';
+import {useDispatch} from 'react-redux'
+import { register} from '../store/slices/auth';
 
 function Register() {
+  
+  const dispatch = useDispatch()
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    dispatch(register(formData));
+    console.log('user registered')
+  }
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -16,10 +26,10 @@ function Register() {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-  };
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   console.log('Form submitted:', formData);
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
