@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Register from "./pages/register";
 import Login from "./pages/login";
 import MainMenu from "./pages/main_menu";
+import Game from "./pages/game";
 import "./index.css";
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/menu" element={<MainMenu />} />
+      <Route path="/game" element={<Game />} />
     </Routes>
   );
 }
