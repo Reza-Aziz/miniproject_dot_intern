@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { login } from "../store/slices/auth";
 
 function Login() {
@@ -10,13 +10,14 @@ function Login() {
     password: "",
   });
 
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const users = useSelector((state) => state.auth.users);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -28,6 +29,7 @@ function Login() {
     if (user) {
       dispatch(login(user));
       console.log("loggin success");
+      navigate("/menu");
     } else {
       alert("Email atau password salah");
     }

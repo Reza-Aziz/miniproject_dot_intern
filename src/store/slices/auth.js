@@ -6,6 +6,7 @@ const authSlice = createSlice({
     user: null,
     isAuthenticated: false,
     users: [], // Simpen semua registered users
+    lastScore : null,
   },
   reducers: {
     register: (state, action) => {
@@ -21,8 +22,11 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
     },
+    saveScore: (state, action) => {
+      state.lastScore = action.payload
+    }
   },
 });
 
-export const { register, login, logout } = authSlice.actions;
+export const { register, login, logout, saveScore } = authSlice.actions;
 export default authSlice.reducer;
