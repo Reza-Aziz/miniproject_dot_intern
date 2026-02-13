@@ -16,29 +16,37 @@ function AnswerCard({ options, onAnswerSelect, selectedAnswer }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {options.map((option, index) => (
         <button
           key={index}
           onClick={() => handleClick(index)}
           disabled={clickedAnswer !== null}
           className={`
-            w-full bg-white rounded-xl shadow-md p-4 sm:p-6 text-left
-            transition-all duration-200 transform
-            hover:scale-102 hover:shadow-lg
+            w-full bg-white rounded-xl border p-4 sm:p-5 text-left group
+            transition-all duration-200 
             ${clickedAnswer === index 
-              ? 'ring-4 ring-indigo-500 bg-indigo-50' 
-              : 'hover:ring-2 hover:ring-indigo-300'
+              ? 'border-zinc-900 bg-zinc-50 shadow-none ring-1 ring-zinc-900' 
+              : 'border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50 shadow-sm hover:shadow-md'
             }
             ${clickedAnswer !== null && clickedAnswer !== index ? 'opacity-50' : ''}
             disabled:cursor-not-allowed
           `}
         >
           <div className="flex items-center">
-            <span className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-sm sm:text-base mr-4">
+            <span className={`
+              flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-medium text-sm sm:text-base mr-4 transition-colors
+              ${clickedAnswer === index 
+                ? 'bg-zinc-900 text-white' 
+                : 'bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200'
+              }
+            `}>
               {String.fromCharCode(65 + index)}
             </span>
-            <span className="text-base sm:text-lg text-gray-800 font-medium">
+            <span className={`
+              text-base sm:text-lg font-medium transition-colors
+              ${clickedAnswer === index ? 'text-zinc-900' : 'text-zinc-700 group-hover:text-zinc-900'}
+            `}>
               {option}
             </span>
           </div>

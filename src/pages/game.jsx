@@ -257,28 +257,40 @@ function Game() {
   // Resume Dialog
   if (showResumeDialog) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Resume Game?</h2>
-          <p className="text-gray-600 mb-6">You have an unfinished game. Do you want to continue?</p>
+      <div className="min-h-screen bg-zinc-50/50 flex items-center justify-center p-4 selection:bg-zinc-900 selection:text-white">
+        <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 max-w-md w-full">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-zinc-900 tracking-tight mb-2">Resume Session</h2>
+            <p className="text-zinc-500 text-sm">You have an unfinished game in progress.</p>
+          </div>
 
           {savedGameData && (
-            <div className="bg-indigo-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-gray-700">
-                <span className="font-semibold">Progress:</span> Question {savedGameData.currentQuestionIndex + 1}/{savedGameData.questions.length}
-              </p>
-              <p className="text-sm text-gray-700 mt-1">
-                <span className="font-semibold">Answered:</span> {savedGameData.userAnswers.filter((a) => a !== null).length}/{savedGameData.questions.length}
-              </p>
+            <div className="bg-zinc-50 rounded-xl p-4 mb-6 border border-zinc-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Progress</span>
+                <span className="text-sm font-semibold text-zinc-900">{savedGameData.currentQuestionIndex + 1} <span className="text-zinc-400">/</span> {savedGameData.questions.length}</span>
+              </div>
+              <div className="w-full bg-zinc-200 rounded-full h-1.5">
+                <div 
+                  className="bg-zinc-900 h-1.5 rounded-full" 
+                  style={{ width: `${((savedGameData.currentQuestionIndex + 1) / savedGameData.questions.length) * 100}%` }}
+                ></div>
+              </div>
             </div>
           )}
 
           <div className="flex gap-3">
-            <button onClick={handleResumeGame} className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">
-              Resume
+            <button 
+              onClick={handleResumeGame} 
+              className="flex-1 bg-zinc-900 text-white py-3 rounded-xl font-medium hover:bg-zinc-800 transition-all duration-200 active:scale-[0.98] shadow-sm"
+            >
+              Resume Game
             </button>
-            <button onClick={handleStartNewGame} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
-              New Game
+            <button 
+              onClick={handleStartNewGame} 
+              className="flex-1 bg-white text-zinc-700 py-3 rounded-xl font-medium border border-zinc-200 hover:bg-zinc-50 transition-all duration-200"
+            >
+              Start New
             </button>
           </div>
         </div>
@@ -289,28 +301,32 @@ function Game() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-50/50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading questions...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-zinc-900 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-zinc-500 text-sm font-medium animate-pulse">Preparing your questions...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-zinc-50/50 p-4 sm:p-6 lg:p-8 flex items-center justify-center selection:bg-zinc-900 selection:text-white">
+      <div className="w-full max-w-3xl">
         {!isGameFinished ? (
           <>
             {/* Cek dulu questions ada isinya */}
             {questions.length > 0 && questions[currentQuestionIndex] ? (
-              <>
+              <div className="space-y-6">
                 {/* Header */}
-                <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <ProgressBar current={currentQuestionIndex + 1} total={questions.length} />
-                    <Timer timeLeft={timeLeft} />
+                <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-4 sm:px-6 sm:py-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="w-full sm:w-2/3">
+                      <ProgressBar current={currentQuestionIndex + 1} total={questions.length} />
+                    </div>
+                    <div className="w-full sm:w-auto flex justify-end">
+                      <Timer timeLeft={timeLeft} />
+                    </div>
                   </div>
                 </div>
 
@@ -318,7 +334,7 @@ function Game() {
                 <QuestionCard question={questions[currentQuestionIndex].question} questionNumber={currentQuestionIndex + 1} />
 
                 <AnswerCard options={questions[currentQuestionIndex].options} onAnswerSelect={handleAnswerSelect} selectedAnswer={userAnswers[currentQuestionIndex]} />
-              </>
+              </div>
             ) : null}
           </>
         ) : (
