@@ -8,6 +8,48 @@ import Timer from "../components/game/Timer";
 import ProgressBar from "../components/game/ProgressBar";
 import GameSummary from "../components/game/GameSummary";
 
+// Helper: Save game state ke localStorage
+const saveGameState = (state) => {
+  try {
+    localStorage.setItem(
+      "gameState",
+      JSON.stringify({
+        ...state,
+        timestamp: Date.now(), // Buat validasi data expired
+      }),
+    );
+  } catch (error) {
+    console.error("Error saving game state:", error);
+  }
+};
+
+// Helper: Load game state dari localStorage
+const loadGameState = () => {
+  try {
+    const saved = localStorage.getItem("gameState");
+    if (!saved) return null;
+
+    const data = JSON.parse(saved);
+
+    // Validasi: Buang data kalau lebih dari 24 jam
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    if (Date.now() - data.timestamp > ONE_DAY) {
+      localStorage.removeItem("gameState");
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error loading game state:", error);
+    return null;
+  }
+};
+
+// Helper: Clear game state
+const clearGameState = () => {
+  localStorage.removeItem("gameState");
+};
+
 function Game() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -18,79 +60,88 @@ function Game() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState([]);
   const [timeLeft, setTimeLeft] = useState(10);
-  const [totalTimeElapsed, setTotalTimeElapsed] = useState(0);
+  const [timeSpentPerQuestion, setTimeSpentPerQuestion] = useState([]);
   const [isGameFinished, setIsGameFinished] = useState(false);
 
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const [savedGameData, setSavedGameData] = useState(null);
+
   // Fetch questions from API
+  // Check for saved game on mount
   useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        setIsLoading(true);
+    const savedGame = loadGameState();
 
-        // Coba beberapa API endpoint sampai berhasil
-        const apiUrls = ["https://opentdb.com/api.php?amount=10&type=multiple", "https://opentdb.com/api.php?amount=10&category=18&type=multiple", "https://opentdb.com/api.php?amount=10&category=21&type=multiple"];
+    if (savedGame && savedGame.questions && savedGame.questions.length > 0) {
+      // Ada saved game, tanya user mau resume atau ngga
+      setSavedGameData(savedGame);
+      setShowResumeDialog(true);
+    } else {
+      // Gak ada saved game, fetch baru
+      fetchQuestions();
+    }
+  }, []);
 
-        let data = null;
+  // Fetch questions function (dipisah dari useEffect)
+  const fetchQuestions = async () => {
+    try {
+      setIsLoading(true);
 
-        for (let i = 0; i < apiUrls.length; i++) {
-          const url = apiUrls[i];
-          try {
-            // Add delay sebelum request untuk hindari rate limiting
-            if (i > 0) {
-              await new Promise(resolve => setTimeout(resolve, 1000)); // 1 detik delay
-            }
+      const apiUrls = ["https://opentdb.com/api.php?amount=10&type=multiple", "https://opentdb.com/api.php?amount=10&category=18&type=multiple", "https://opentdb.com/api.php?amount=10&category=21&type=multiple"];
 
-            const response = await fetch(url);
-            const result = await response.json();
+      let data = null;
 
-            if (result.response_code === 0 && result.results.length > 0) {
-              data = result;
-              break; // Berhasil, keluar dari loop
-            }
-          } catch (err) {
-            console.log("Trying next API...", err);
-            continue; // Coba URL berikutnya
+      for (let i = 0; i < apiUrls.length; i++) {
+        const url = apiUrls[i];
+        try {
+          if (i > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           }
+
+          const response = await fetch(url);
+          const result = await response.json();
+
+          if (result.response_code === 0 && result.results.length > 0) {
+            data = result;
+            break;
+          }
+        } catch (err) {
+          console.log("Trying next API...", err);
+          continue;
         }
-
-        if (!data || data.response_code !== 0) {
-          throw new Error("Failed to fetch questions from all sources");
-        }
-
-        // Transform OpenTDB format ke format kita
-        const transformedQuestions = data.results.map((item, index) => {
-          // Decode HTML entities
-          const decodeHTML = (html) => {
-            const txt = document.createElement("textarea");
-            txt.innerHTML = html;
-            return txt.value;
-          };
-
-          // Shuffle answers
-          const allAnswers = [...item.incorrect_answers.map((ans) => decodeHTML(ans)), decodeHTML(item.correct_answer)];
-          const shuffled = allAnswers.sort(() => Math.random() - 0.5);
-
-          return {
-            id: index + 1,
-            question: decodeHTML(item.question),
-            options: shuffled,
-            correctAnswer: shuffled.indexOf(decodeHTML(item.correct_answer)),
-          };
-        });
-
-        setQuestions(transformedQuestions);
-        setUserAnswers(new Array(transformedQuestions.length).fill(null));
-      } catch (error) {
-        console.error("Fetch Error:", error);
-        alert("Failed to load questions. Please try again later.");
-        navigate("/menu");
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    fetchQuestions();
-  }, [navigate]);
+      if (!data || data.response_code !== 0) {
+        throw new Error("Failed to fetch questions from all sources");
+      }
+
+      const transformedQuestions = data.results.map((item, index) => {
+        const decodeHTML = (html) => {
+          const txt = document.createElement("textarea");
+          txt.innerHTML = html;
+          return txt.value;
+        };
+
+        const allAnswers = [...item.incorrect_answers.map((ans) => decodeHTML(ans)), decodeHTML(item.correct_answer)];
+        const shuffled = allAnswers.sort(() => Math.random() - 0.5);
+
+        return {
+          id: index + 1,
+          question: decodeHTML(item.question),
+          options: shuffled,
+          correctAnswer: shuffled.indexOf(decodeHTML(item.correct_answer)),
+        };
+      });
+
+      setQuestions(transformedQuestions);
+      setUserAnswers(new Array(transformedQuestions.length).fill(null));
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      alert("Failed to load questions. Please try again later.");
+      navigate("/menu");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Timer per soal (countdown)
   useEffect(() => {
@@ -108,16 +159,25 @@ function Game() {
     return () => clearInterval(timer);
   }, [timeLeft, isLoading, isGameFinished]);
 
-  // Total time tracker
-  useEffect(() => {
-    if (isLoading || isGameFinished) return;
+  // Handle resume game
+  const handleResumeGame = () => {
+    if (savedGameData) {
+      setQuestions(savedGameData.questions);
+      setCurrentQuestionIndex(savedGameData.currentQuestionIndex);
+      setUserAnswers(savedGameData.userAnswers);
+      setTimeLeft(savedGameData.timeLeft);
+      setTimeSpentPerQuestion(savedGameData.timeSpentPerQuestion);
+      setIsLoading(false);
+    }
+    setShowResumeDialog(false);
+  };
 
-    const interval = setInterval(() => {
-      setTotalTimeElapsed((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isLoading, isGameFinished]);
+  // Handle start new game
+  const handleStartNewGame = () => {
+    clearGameState();
+    setShowResumeDialog(false);
+    fetchQuestions();
+  };
 
   // Handle answer selection
   const handleAnswerSelect = (answerIndex) => {
@@ -126,15 +186,32 @@ function Game() {
 
   // Handle next question
   const handleNextQuestion = (answer) => {
+    const timeSpent = 10 - timeLeft;
+    const newTimeSpent = [...timeSpentPerQuestion, timeSpent];
     const newAnswers = [...userAnswers];
     newAnswers[currentQuestionIndex] = answer;
+
+    const newIndex = currentQuestionIndex + 1; // ← PINDAH KESINI
+
+    setTimeSpentPerQuestion(newTimeSpent);
     setUserAnswers(newAnswers);
 
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+      setCurrentQuestionIndex(newIndex);
       setTimeLeft(10);
+
+      // Auto-save state setelah jawab
+      saveGameState({
+        questions,
+        currentQuestionIndex: newIndex,
+        userAnswers: newAnswers,
+        timeLeft: 10,
+        timeSpentPerQuestion: newTimeSpent,
+      });
     } else {
       setIsGameFinished(true);
+      // Clear saved game karena udah selesai
+      clearGameState();
     }
   };
 
@@ -149,7 +226,8 @@ function Game() {
     });
 
     const percentage = Math.round((correct / questions.length) * 100);
-    const minutes = Math.floor(totalTimeElapsed / 60);
+    const totalSeconds = timeSpentPerQuestion.reduce((sum, time) => sum + time, 0);
+    const minutes = Math.floor(totalSeconds / 60);
 
     return {
       percentage,
@@ -171,8 +249,42 @@ function Game() {
       }),
     );
 
+    clearGameState();
+
     navigate("/menu");
   };
+
+  // Resume Dialog
+  if (showResumeDialog) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Resume Game?</h2>
+          <p className="text-gray-600 mb-6">You have an unfinished game. Do you want to continue?</p>
+
+          {savedGameData && (
+            <div className="bg-indigo-50 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Progress:</span> Question {savedGameData.currentQuestionIndex + 1}/{savedGameData.questions.length}
+              </p>
+              <p className="text-sm text-gray-700 mt-1">
+                <span className="font-semibold">Answered:</span> {savedGameData.userAnswers.filter((a) => a !== null).length}/{savedGameData.questions.length}
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button onClick={handleResumeGame} className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">
+              Resume
+            </button>
+            <button onClick={handleStartNewGame} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
+              New Game
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
   if (isLoading) {

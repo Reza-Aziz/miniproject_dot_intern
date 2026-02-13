@@ -2,7 +2,7 @@ import React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { register } from "../store/slices/auth";
+import { register, login } from "../store/slices/auth";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -17,8 +17,10 @@ function Register() {
   const handleSubmit = (e) => {
     e.preventDefault();
     dispatch(register(formData));
+    dispatch(login(formData));
+
     console.log("user registered");
-    navigate('/menu');
+    navigate("/menu");
   };
 
   const handleChange = (e) => {
@@ -27,11 +29,6 @@ function Register() {
       [e.target.name]: e.target.value,
     });
   };
-
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   console.log('Form submitted:', formData);
-  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
